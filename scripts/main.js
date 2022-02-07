@@ -6,7 +6,6 @@ const game = new Phaser.Game({
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 300 },
       debug: false,
     },
   },
@@ -17,8 +16,24 @@ const game = new Phaser.Game({
   },
 });
 
-function preload() {}
+function preload() {
+  this.load.image("sky", "assets/sky.png");
+  this.load.image("tileset", "assets/tileset.png");
+  this.load.spritesheet("dude", "assets/dude.png", {
+    frameWidth: 32,
+    frameHeight: 48,
+  });
+}
 
-function create() {}
+function create() {
+  this.add.image(1280 / 2, 720 / 2, "sky");
+  const map = this.make.tilemap({
+    data: [],
+    tileWidth: 64,
+    tileHeight: 64,
+  });
+  map.addTilesetImage("tileset");
+  const layer = map.createLayer(0, "tileset", 0, 0);
+}
 
 function update() {}
