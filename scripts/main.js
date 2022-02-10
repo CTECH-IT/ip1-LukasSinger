@@ -3,6 +3,7 @@ let level = 1;
 let levels;
 let game;
 let player;
+let cursors;
 
 load();
 
@@ -53,11 +54,13 @@ async function create() {
     tileHeight: 32,
   });
   map.addTilesetImage("tileset");
+  map.setCollisionByExclusion([0], true, this.collisionLayer);
   const walls = map.createLayer(0, "tileset", 1280 / 2 - 720 / 2, 0);
   walls.scale = 720 / 320;
 
   // Player
   player = this.physics.add.sprite(1280 / 2, 720 / 2, "dude");
+  player.scale = 1.5
   player.setCollideWorldBounds(true);
   this.anims.create({
     key: "left",
@@ -80,6 +83,28 @@ async function create() {
 
   // Collision
   this.physics.add.collider(player, walls);
+
+  // Input
+  cursors = this.input.keyboard.createCursorKeys();
 }
 
-function update() {}
+function update() {
+  // Input
+  if (cursors.left.isDown){
+    player.setVelocityX(-160);
+    player.anims.play("left", true);
+  } else if (cursors.right.isDown){
+    player.setVelocityX(160);
+    player.anims.play("right", true);
+  } else {
+    player.setVelocityX(0);
+    player.anims.pause()
+  }
+  if (cursors.up.isDown){
+    player.setVelocityY(-160);
+  } else if (cursors.down.isDown){
+    player.setVelocityY(160);
+  } else {
+    player.setVelocityY(0);
+  }
+}
