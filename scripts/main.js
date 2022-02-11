@@ -126,19 +126,19 @@ function update() {
       currentTile.transition = false;
     }
   } else if (!isDoingAction) {
-    // Check for input
+    // Check for directional input
     if (cursors.left.isDown) {
-      handleInput(-1, 0);
+      handleDirectional(-1, 0);
     } else if (cursors.right.isDown) {
-      handleInput(1, 0);
+      handleDirectional(1, 0);
     } else {
       player.setVelocityX(0);
       player.anims.pause();
     }
     if (cursors.up.isDown) {
-      handleInput(0, -1);
+      handleDirectional(0, -1);
     } else if (cursors.down.isDown) {
-      handleInput(0, 1);
+      handleDirectional(0, 1);
     } else {
       player.setVelocityY(0);
     }
@@ -158,26 +158,37 @@ function getTileY(pos) {
  * @param {int} dx The number of tiles in the X position from the tile the player is currently occupying.
  * @param {int} dy The number of tiles in the Y position from the tile the player is currently occupying.
  */
-function handleInput(dx, dy) {
+function handleDirectional(dx, dy) {
   let x = currentTile.x + dx;
   let y = currentTile.y + dy;
   // Return if the tile is outside the bounds of the level
   if (x < 0 || y < 0 || x > 9 || y > 9) return;
-  // Return if the tile is a wall or pit
+  // Return if the tile is a wall
   let tile = level.tiles.layer.data[y][x];
   if (BLOCKING_TILES.includes(tile.index)) return;
-  // Move to tile if nothing is occupying it
+  // Check if player is placing or just walking
+  let placeMode = cursors.space.isDown && inventory != "";
   if (tile.index != ROCK_ID) {
-    player.setVelocityX(dx * 160);
-    player.setVelocityY(dy * 160);
-    player.anims.play(`x${dx}y${dy}`, true);
-    currentTile.x += dx;
-    currentTile.y += dy;
-    currentTile.transition = true;
-  } else if (tile.index == ROCK_ID && !inventory) {
-    // If it's a rock and the inventory is empty, pick it up
-    tile.index = FLOOR_ID;
-    inventory = "rock";
-    isDoingAction = true;
+    if (placeMode) {
+      // Place on tile if nothing is occupying it
+      tile.index = ROCK_ID;
+      inventory = "";
+      isDoingAction = true;
+    } else {
+      // Move to tile if nothing is occupying it
+      player.setVelocityX(dx * 160);
+      player.setVelocityY(dy * 160);
+      player.anims.play(`x${dx}y${dy}`, true);
+      currentTile.x += dx;
+      currentTile.y += dy;
+      currentTile.transition = true;
+    }
+  } else if (!inventory) {
+    // If the inventory is empty, attempt to pick up the tile
+    if (tile.index == ROCK_ID) {
+      tile.index = FLOOR_ID;
+      inventory = "rock";
+      isDoingAction = true;
+    }
   }
 }
