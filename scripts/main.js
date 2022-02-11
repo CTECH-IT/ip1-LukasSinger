@@ -1,16 +1,23 @@
-const WALL_TILES = [4];
+const BLOCKING_TILES = [4];
+const FLOOR_ID = 0;
+const ROCK_ID = 10;
 
-let level = 1;
+let cursors;
+
+let level = {
+  index: 1
+};
 
 let levels;
 let game;
 let player;
-let cursors;
+let isDoingAction = false;
 let currentTile = {
   x: 0,
   y: 0,
   transition: false
 };
+let inventory = "";
 
 load();
 
@@ -56,13 +63,13 @@ async function create() {
 
   // Level
   const map = this.make.tilemap({
-    data: levels[level],
+    data: levels[level.index],
     tileWidth: 32,
     tileHeight: 32
   });
   map.addTilesetImage("tileset");
-  const walls = map.createLayer(0, "tileset", 1280 / 2 - 720 / 2, 0);
-  walls.scale = 720 / 320;
+  level.tiles = map.createLayer(0, "tileset", 1280 / 2 - 720 / 2, 0);
+  level.tiles.scale = 720 / 320;
 
   // Player
   player = this.physics.add.sprite(
@@ -72,7 +79,7 @@ async function create() {
   );
   player.scale = 1.5;
   this.anims.create({
-    key: "left",
+    key: "x-1y0",
     frames: this.anims.generateFrameNumbers("dude", {
       start: 0,
       end: 3
@@ -81,7 +88,7 @@ async function create() {
     repeat: -1
   });
   this.anims.create({
-    key: "right",
+    key: "x1y0",
     frames: this.anims.generateFrameNumbers("dude", {
       start: 5,
       end: 8
@@ -95,7 +102,19 @@ async function create() {
 }
 
 function update() {
-  // Moving between tiles
+  // Don't handle input if the player hasn't let go of the key after picking up or dropping
+  if (
+    isDoingAction &&
+    !(
+      cursors.left.isDown ||
+      cursors.right.isDown ||
+      cursors.up.isDown ||
+      cursors.down.isDown
+    )
+  ) {
+    isDoingAction = false;
+  }
+  // If player is moving between tiles
   if (currentTile.transition) {
     if (
       Math.abs(player.x - getTileX(currentTile.x)) < 5 &&
@@ -106,30 +125,20 @@ function update() {
       player.anims.pause();
       currentTile.transition = false;
     }
-  } else {
-    // Check for input to move between tiles
-    if (cursors.left.isDown && adjTileOpen(-1, 0)) {
-      player.setVelocityX(-160);
-      player.anims.play("left", true);
-      currentTile.x -= 1;
-      currentTile.transition = true;
-    } else if (cursors.right.isDown && adjTileOpen(1, 0)) {
-      player.setVelocityX(160);
-      player.anims.play("right", true);
-      currentTile.x += 1;
-      currentTile.transition = true;
+  } else if (!isDoingAction) {
+    // Check for input
+    if (cursors.left.isDown) {
+      handleInput(-1, 0);
+    } else if (cursors.right.isDown) {
+      handleInput(1, 0);
     } else {
       player.setVelocityX(0);
       player.anims.pause();
     }
-    if (cursors.up.isDown && adjTileOpen(0, -1)) {
-      player.setVelocityY(-160);
-      currentTile.y -= 1;
-      currentTile.transition = true;
-    } else if (cursors.down.isDown && adjTileOpen(0, 1)) {
-      player.setVelocityY(160);
-      currentTile.y += 1;
-      currentTile.transition = true;
+    if (cursors.up.isDown) {
+      handleInput(0, -1);
+    } else if (cursors.down.isDown) {
+      handleInput(0, 1);
     } else {
       player.setVelocityY(0);
     }
@@ -145,18 +154,30 @@ function getTileY(pos) {
 }
 
 /**
- * Checks whether or not the tile (specified in relative coordinates) can be entered by the player.
- * @param {int} x The number of tiles in the X position from the tile the player is currently occupying.
- * @param {int} y The number of tiles in the Y position from the tile the player is currently occupying.
- * @returns {boolean} Whether or not the specified tile can be entered by the player.
+ * Take action based on the target tile specified in relative coordinates.
+ * @param {int} dx The number of tiles in the X position from the tile the player is currently occupying.
+ * @param {int} dy The number of tiles in the Y position from the tile the player is currently occupying.
  */
-function adjTileOpen(x, y) {
-  x += currentTile.x;
-  y += currentTile.y;
-  // Check if the tile is within the bounds of the level
-  if (x < 0 || y < 0 || x > 9 || y > 9) return false;
-  // Check if this tile is a wall
-  if (WALL_TILES.includes(levels[level][y][x])) return false;
-  // If all checks pass, the player is allowed to go there
-  return true;
+function handleInput(dx, dy) {
+  let x = currentTile.x + dx;
+  let y = currentTile.y + dy;
+  // Return if the tile is outside the bounds of the level
+  if (x < 0 || y < 0 || x > 9 || y > 9) return;
+  // Return if the tile is a wall or pit
+  let tile = level.tiles.layer.data[y][x];
+  if (BLOCKING_TILES.includes(tile.index)) return;
+  // Move to tile if nothing is occupying it
+  if (tile.index != ROCK_ID) {
+    player.setVelocityX(dx * 160);
+    player.setVelocityY(dy * 160);
+    player.anims.play(`x${dx}y${dy}`, true);
+    currentTile.x += dx;
+    currentTile.y += dy;
+    currentTile.transition = true;
+  } else if (tile.index == ROCK_ID && !inventory) {
+    // If it's a rock and the inventory is empty, pick it up
+    tile.index = FLOOR_ID;
+    inventory = "rock";
+    isDoingAction = true;
+  }
 }
