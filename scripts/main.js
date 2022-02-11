@@ -10,6 +10,8 @@ let level = {
 };
 
 let levels;
+let manager;
+let map;
 let game;
 let player;
 let isDoingAction = false;
@@ -22,6 +24,9 @@ let inventory = "";
 
 load();
 
+/**
+ * Fetches the level data and initializes the Phaser game.
+ */
 async function load() {
   await fetch("data/levels.json")
     .then((res) => {
@@ -49,6 +54,9 @@ async function load() {
   });
 }
 
+/**
+ * Loads assets before the game starts.
+ */
 function preload() {
   this.load.image("sky", "assets/sky.png");
   this.load.image("tileset", "assets/tileset.png");
@@ -63,7 +71,8 @@ async function create() {
   this.add.image(1280 / 2, 720 / 2, "sky");
 
   // Level
-  const map = this.make.tilemap({
+  manager = this;
+  map = this.make.tilemap({
     data: levels[level.index],
     tileWidth: 32,
     tileHeight: 32
@@ -146,10 +155,20 @@ function update() {
   }
 }
 
+/**
+ * Converts an X tile coordinate into a raw X position.
+ * @param {int} pos The X tile coordinate to convert.
+ * @returns {number} The raw X position of the center of the X tile coordinate.
+ */
 function getTileX(pos) {
   return 1280 / 2 - 720 / 2 + pos * 32 * 2.25 + 0.5 * 32 * 2.25;
 }
 
+/**
+ * Converts a Y tile coordinate into a raw Y position.
+ * @param {int} pos The Y tile coordinate to convert.
+ * @returns {number} The raw Y position of the center of the Y tile coordinate.
+ */
 function getTileY(pos) {
   return pos * 32 * 2.25 + 0.5 * 32 * 2.25;
 }
@@ -180,6 +199,7 @@ function handleDirectional(dx, dy) {
         tile.index = COMPUTER_ID;
         inventory = "";
         isDoingAction = true;
+        checkWinCondition(x, y);
       }
     } else {
       // Move to tile if nothing is occupying it
@@ -206,5 +226,32 @@ function handleDirectional(dx, dy) {
     tile.index = COMPUTER_ID;
     inventory = "";
     isDoingAction = true;
+  }
+}
+
+function checkWinCondition(x, y) {
+  // If the placed computer is at (0, 0), trigger the win state
+  if (x == 0 && y == 0) {
+    if (levels[level.index + 1] == undefined) {
+      alert("Final level complete! Thanks for playing!");
+    } else {
+      alert("Level complete! Click OK to start the next level...");
+      level.index++;
+      loadLevel(level.index);
+    }
+  }
+}
+
+/**
+ * Resets the player to the start position and loads the level of the specified index.
+ * @param {int} index The index of the level to load.
+ */
+function loadLevel(index) {
+  player.x = getTileX(0);
+  player.y = getTileY(0);
+  for (let row = 0; row < 10; row++) {
+    for (let col = 0; col < 10; col++) {
+      level.tiles.layer.data[row][col].index = levels[index][row][col];
+    }
   }
 }
