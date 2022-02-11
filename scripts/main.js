@@ -37,7 +37,7 @@ async function load() {
       return levels;
     });
   game = new Phaser.Game({
-    type: Phaser.AUTO,
+    type: Phaser.CANVAS,
     width: 1280,
     height: 720,
     physics: {
