@@ -3,3 +3,8 @@ body {
   flex-direction: column;
   align-items: center;
 }
+
+p {
+  width: 1280px;
+  font-family: "Segoe UI", sans-serif;
+}

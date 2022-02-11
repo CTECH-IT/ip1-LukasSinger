@@ -1,6 +1,6 @@
 const BLOCKING_TILES = [4];
 const FLOOR_ID = 0;
-const ROCK_ID = 10;
+const ROCK_ID = 1;
 const COMPUTER_ID = 2;
 
 let cursors;
