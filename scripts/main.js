@@ -249,6 +249,8 @@ function checkWinCondition(x, y) {
 function loadLevel(index) {
   player.x = getTileX(0);
   player.y = getTileY(0);
+  currentTile.x = 0;
+  currentTile.y = 0;
   for (let row = 0; row < 10; row++) {
     for (let col = 0; col < 10; col++) {
       level.tiles.layer.data[row][col].index = levels[index][row][col];
