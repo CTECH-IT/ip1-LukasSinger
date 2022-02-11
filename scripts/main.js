@@ -1,3 +1,5 @@
+const WALL_TILES = [4];
+
 let level = 1;
 
 let levels;
@@ -59,7 +61,6 @@ async function create() {
     tileHeight: 32
   });
   map.addTilesetImage("tileset");
-  map.setCollisionByExclusion([0], true, this.collisionLayer);
   const walls = map.createLayer(0, "tileset", 1280 / 2 - 720 / 2, 0);
   walls.scale = 720 / 320;
 
@@ -70,7 +71,6 @@ async function create() {
     "dude"
   );
   player.scale = 1.5;
-  player.setCollideWorldBounds(true);
   this.anims.create({
     key: "left",
     frames: this.anims.generateFrameNumbers("dude", {
@@ -90,9 +90,6 @@ async function create() {
     repeat: -1
   });
 
-  // Collision
-  this.physics.add.collider(player, walls);
-
   // Input
   cursors = this.input.keyboard.createCursorKeys();
 }
@@ -111,12 +108,12 @@ function update() {
     }
   } else {
     // Check for input to move between tiles
-    if (cursors.left.isDown) {
+    if (cursors.left.isDown && adjTileOpen(-1, 0)) {
       player.setVelocityX(-160);
       player.anims.play("left", true);
       currentTile.x -= 1;
       currentTile.transition = true;
-    } else if (cursors.right.isDown) {
+    } else if (cursors.right.isDown && adjTileOpen(1, 0)) {
       player.setVelocityX(160);
       player.anims.play("right", true);
       currentTile.x += 1;
@@ -125,11 +122,11 @@ function update() {
       player.setVelocityX(0);
       player.anims.pause();
     }
-    if (cursors.up.isDown) {
+    if (cursors.up.isDown && adjTileOpen(0, -1)) {
       player.setVelocityY(-160);
       currentTile.y -= 1;
       currentTile.transition = true;
-    } else if (cursors.down.isDown) {
+    } else if (cursors.down.isDown && adjTileOpen(0, 1)) {
       player.setVelocityY(160);
       currentTile.y += 1;
       currentTile.transition = true;
@@ -145,4 +142,21 @@ function getTileX(pos) {
 
 function getTileY(pos) {
   return pos * 32 * 2.25 + 0.5 * 32 * 2.25;
+}
+
+/**
+ * Checks whether or not the tile (specified in relative coordinates) can be entered by the player.
+ * @param {int} x The number of tiles in the X position from the tile the player is currently occupying.
+ * @param {int} y The number of tiles in the Y position from the tile the player is currently occupying.
+ * @returns {boolean} Whether or not the specified tile can be entered by the player.
+ */
+function adjTileOpen(x, y) {
+  x += currentTile.x;
+  y += currentTile.y;
+  // Check if the tile is within the bounds of the level
+  if (x < 0 || y < 0 || x > 9 || y > 9) return false;
+  // Check if this tile is a wall
+  if (WALL_TILES.includes(levels[level][y][x])) return false;
+  // If all checks pass, the player is allowed to go there
+  return true;
 }
