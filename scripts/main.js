@@ -1,6 +1,7 @@
 const BLOCKING_TILES = [4];
 const FLOOR_ID = 0;
 const ROCK_ID = 10;
+const COMPUTER_ID = 2;
 
 let cursors;
 
@@ -168,12 +169,18 @@ function handleDirectional(dx, dy) {
   if (BLOCKING_TILES.includes(tile.index)) return;
   // Check if player is placing or just walking
   let placeMode = cursors.space.isDown && inventory != "";
-  if (tile.index != ROCK_ID) {
+  if (tile.index != ROCK_ID && tile.index != COMPUTER_ID) {
     if (placeMode) {
       // Place on tile if nothing is occupying it
-      tile.index = ROCK_ID;
-      inventory = "";
-      isDoingAction = true;
+      if (inventory == "rock") {
+        tile.index = ROCK_ID;
+        inventory = "";
+        isDoingAction = true;
+      } else if (inventory == "computer") {
+        tile.index = COMPUTER_ID;
+        inventory = "";
+        isDoingAction = true;
+      }
     } else {
       // Move to tile if nothing is occupying it
       player.setVelocityX(dx * 160);
@@ -189,6 +196,15 @@ function handleDirectional(dx, dy) {
       tile.index = FLOOR_ID;
       inventory = "rock";
       isDoingAction = true;
+    } else if (tile.index == COMPUTER_ID) {
+      tile.index = FLOOR_ID;
+      inventory = "computer";
+      isDoingAction = true;
     }
+  } else if (placeMode && tile.index == ROCK_ID && inventory == "rock") {
+    // If the player is trying to place a rock on another rock, make a computer
+    tile.index = COMPUTER_ID;
+    inventory = "";
+    isDoingAction = true;
   }
 }
